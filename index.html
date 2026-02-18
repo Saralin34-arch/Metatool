@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace Evolution</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #141414;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
+            --timeline-line: #2a2a2a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        header {
+            text-align: center;
+            padding: 80px 20px 60px;
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+        }
+
+        header h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, var(--accent) 0%, var(--timeline-line) 100%);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 60px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .timeline-item:nth-child(1) { animation-delay: 0.1s; }
+        .timeline-item:nth-child(2) { animation-delay: 0.2s; }
+        .timeline-item:nth-child(3) { animation-delay: 0.3s; }
+        .timeline-item:nth-child(4) { animation-delay: 0.4s; }
+        .timeline-item:nth-child(5) { animation-delay: 0.5s; }
+        .timeline-item:nth-child(6) { animation-delay: 0.6s; }
+        .timeline-item:nth-child(7) { animation-delay: 0.7s; }
+        .timeline-item:nth-child(8) { animation-delay: 0.8s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -48px;
+            top: 24px;
+            width: 16px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 3px solid var(--bg-primary);
+            box-shadow: 0 0 20px var(--accent-glow);
+            z-index: 1;
+        }
+
+        .timeline-date {
+            font-size: 0.875rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timeline-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            max-width: 480px;
+        }
+
+        .timeline-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .timeline-image {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+
+        .timeline-card:hover .timeline-image {
+            transform: scale(1.02);
+        }
+
+        .timeline-content {
+            padding: 20px 24px;
+        }
+
+        .timeline-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .timeline-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .lightbox img {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .lightbox.active img {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: var(--bg-card);
+            border: none;
+            border-radius: 50%;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .lightbox-close:hover {
+            background: var(--accent);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            background: var(--bg-card);
+            border: none;
+            border-radius: 50%;
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+
+        .lightbox-nav:hover {
+            background: var(--accent);
+        }
+
+        .lightbox-prev {
+            left: 20px;
+        }
+
+        .lightbox-next {
+            right: 20px;
+        }
+
+        .lightbox-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            background: var(--bg-card);
+            padding: 12px 24px;
+            border-radius: 8px;
+        }
+
+        .lightbox-date {
+            color: var(--accent);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            border-top: 1px solid var(--timeline-line);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .add-hint {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--timeline-line);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .add-hint-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .timeline {
+                padding-left: 40px;
+            }
+
+            .timeline::before {
+                left: 10px;
+            }
+
+            .timeline-dot {
+                left: -36px;
+                width: 12px;
+                height: 12px;
+            }
+
+            .stats {
+                gap: 24px;
+            }
+
+            .stat-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Workspace Evolution</h1>
+        <p>Documenting the transformation of my working station over time</p>
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="photo-count">0</div>
+                <div class="stat-label">Photos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="days-span">0</div>
+                <div class="stat-label">Days Documented</div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="timeline" id="timeline"></div>
+    </main>
+
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">×</button>
+        <button class="lightbox-nav lightbox-prev" onclick="navigateLightbox(-1)">‹</button>
+        <img id="lightbox-img" src="" alt="">
+        <button class="lightbox-nav lightbox-next" onclick="navigateLightbox(1)">+</button>
+        <div class="lightbox-info">
+            <div class="lightbox-date" id="lightbox-date"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Workspace Evolution Timeline</p>
+    </footer>
+
+    <script>
+        const photos = [
+            {
+                src: 'Photo of the Space/IMG_6747.JPG',
+                date: 'February 3, 2026',
+                timestamp: new Date('2026-02-03'),
+                title: 'Multi-Screen Setup',
+                description: 'Initial configuration with external monitor and multiple laptops'
+            },
+            {
+                src: 'Photo of the Space/IMG_6813.JPG',
+                date: 'February 10, 2026',
+                timestamp: new Date('2026-02-10'),
+                title: 'Refined Workspace',
+                description: 'Adjusted layout with improved organization'
+            },
+            {
+                src: 'Photo of the Space/IMG_7065.JPG',
+                date: 'February 14, 2026',
+                timestamp: new Date('2026-02-14'),
+                title: 'Evening Mode',
+                description: 'The workspace in ambient evening lighting'
+            },
+            {
+                src: 'Photo of the Space/IMG_7068.JPG',
+                date: 'February 17, 2026',
+                timestamp: new Date('2026-02-17'),
+                title: 'Current Setup',
+                description: 'Latest workspace configuration with streamlined setup'
+            }
+        ];
+
+        let currentLightboxIndex = 0;
+
+        function initTimeline() {
+            const timeline = document.getElementById('timeline');
+            
+            photos.sort((a, b) => a.timestamp - b.timestamp);
+
+            photos.forEach((photo, index) => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.innerHTML = `
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-date">${photo.date}</div>
+                    <div class="timeline-card" onclick="openLightbox(${index})">
+                        <img class="timeline-image" src="${photo.src}" alt="${photo.title}" loading="lazy">
+                    </div>
+                `;
+                timeline.appendChild(item);
+            });
+
+            const hint = document.createElement('div');
+            hint.className = 'timeline-item';
+            hint.innerHTML = `
+                <div class="timeline-dot" style="background: var(--timeline-line);"></div>
+                <div class="add-hint">
+                    <div class="add-hint-icon">+</div>
+                    <p>Add more photos to "Photo of the Space" folder<br>to continue documenting your journey</p>
+                </div>
+            `;
+            timeline.appendChild(hint);
+
+            document.getElementById('photo-count').textContent = photos.length;
+            
+            if (photos.length >= 2) {
+                const firstDate = photos[0].timestamp;
+                const lastDate = photos[photos.length - 1].timestamp;
+                const daysDiff = Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24));
+                document.getElementById('days-span').textContent = daysDiff || 1;
+            } else {
+                document.getElementById('days-span').textContent = 1;
+            }
+        }
+
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            const dateEl = document.getElementById('lightbox-date');
+            
+            img.src = photos[index].src;
+            dateEl.textContent = photos[index].date + ' — ' + photos[index].title;
+            lightbox.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function navigateLightbox(direction) {
+            currentLightboxIndex += direction;
+            if (currentLightboxIndex < 0) currentLightboxIndex = photos.length - 1;
+            if (currentLightboxIndex >= photos.length) currentLightboxIndex = 0;
+            
+            const img = document.getElementById('lightbox-img');
+            const dateEl = document.getElementById('lightbox-date');
+            img.src = photos[currentLightboxIndex].src;
+            dateEl.textContent = photos[currentLightboxIndex].date + ' — ' + photos[currentLightboxIndex].title;
+        }
+
+        document.getElementById('lightbox').addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox') {
+                closeLightbox();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox.classList.contains('active')) return;
+            
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+        });
+
+        initTimeline();
+    </script>
+</body>
+</html>
